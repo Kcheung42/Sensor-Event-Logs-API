@@ -4,6 +4,8 @@
             [web-server-restful.handler :as handler]
             [expectations.clojure.test :refer :all]))
 
+;; Opted to use with-redefs as opposed to dynamic var binding.
+
 (defexpect creating-sensor
   (with-redefs [sensor-list (atom [])]
     (let [sensor {:id "1", :type :motion, :room-id "1", :status 1}]
@@ -35,14 +37,6 @@
                {:id "1", :type :motion, :room-id "living" :status 1})
               (get-atom-list-count sensor-list)))))
 
-;; (defexpect creating-event
-;;   (with-redefs [event-log (atom [])]
-;;     (let [timestamp (get_date)]
-;;       (expect 1
-;;               (do
-;;                 (create-event {:id "1" :time timestamp :sensor-id "1"})
-;;                 (get-atom-list-count event-log))))))
-
 (defexpect validate-sensor
   (expecting "a valid sensor has an id, type, room-id it is in, and status"
              (expect false (valid-sensor? {:type :motion, :room-id "1"}))
@@ -50,11 +44,34 @@
              (expect false (valid-sensor? {:id "1", :type :motion}))
              (expect false (valid-sensor? {:wrong-keys "1"}))))
 
-;; (defexpect creating-event
-;;   (with-redefs [event-log (atom [])]
-;;     (expect 1
-;;             (do
-;;               (create-event {:id "1" :type "motion"})))))
+;; (defexpect validate-event ;;   )
+
+(defexpect creating-event
+  (with-redefs [event-log (atom [])]
+    (expect 1
+            (do
+              (create-event {:id "1" :type "motion"})
+              (get-atom-list-count event-log)))))
+
+(defexpect creating-event
+  (with-redefs [event-log (atom [])]
+    (let [event {:id "1", :type :motion, :room-id "1" :status 1}]
+      (expect event
+              (do
+                (create-event event)
+                (get-all-events))))))
+
+(defexpect creating-multiple-events
+  (with-redefs [event-log (atom [])]
+    (expect 3
+            (do
+              (create-event
+               {:id "1", :type :motion, :room-id "1" :status 1})
+              (create-event
+               {:id "2", :type :motion, :room-id "1" :status 1})
+              (create-event
+               {:id "3", :type :motion, :room-id "1" :status 1})
+              (get-all-events)))))
 
 
 ;; (defexpect sensor-endpoint

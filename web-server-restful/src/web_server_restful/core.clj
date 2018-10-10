@@ -1,9 +1,15 @@
 (ns web-server-restful.core
   (:require [ring.adapter.jetty :as jetty]))
 
+;; ---- Helper functions -----
+(defn get_date []
+  (java.util.Date))
 
 ;; ----- Database/identities----
 (def valid-sensor-keys
+  [:id :type :room-id :status])
+
+(def valid-event-keys
   [:id :type :room-id :status])
 
 (def sensor
@@ -14,20 +20,28 @@
   "example room"
   {:id "1" :name "living"})
 
+(def event
+  "example room"
+  {:id "1" :timestamp get_date :sensor-id "1"})
+
 (def event-log (atom []))
 
 (def sensor-list (atom []))
 
+(def db
+  {:events event-log
+   :sensors sensor-list})
+
 (def sensor-types #{:motion :light :door})
 
-;; ---- Helper functions -----
 
-(defn get_date []
-  (java.util.Date))
+;; ---- Validators ----
 
 (defn sensor-exist? [id]
-  (contains? (set (map #(:id %) @sensor-list)) id))
-;; (contains? (set (map #(:id %) @sensor-list)) id))
+  (contains? (set (map :id @sensor-list)) id))
+
+(defn event-exist? [id]
+  (contains? (set (map :id @event-log)) id))
 
 (defn valid-sensor?
   "Assuming sensor is valid"
@@ -38,6 +52,10 @@
       false
       true)))
 
+(defn valid-event? [id]
+  "TODO"
+  true)
+
 ;; ---- Settter -----
 
 (defn create-sensor [new-sensor]
@@ -46,10 +64,12 @@
     (swap! sensor-list conj new-sensor)
     nil))
 
-;; (defn create-event [new-event]
-;;   (if (and (valid-event? new-event)
-;;            (not (event-exist? (:id new-event))))
-;;     (swap! event-log conj new-event)))
+(defn create-event [new-event]
+  (if (and (valid-event? new-event)
+           (not (event-exist? (:id new-event))))
+    (swap! event-log conj new-event)))
+
+;; (defn create-room [])
 
 ;; create-sensor and create-event looks simlar. TODO Optimize
 
@@ -63,8 +83,6 @@
 
 (defn get-all-events []
   @sensor-list)
-
-
 
 (defn app-handler [request]
   {:status 200
