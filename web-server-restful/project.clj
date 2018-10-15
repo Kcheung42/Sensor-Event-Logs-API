@@ -19,5 +19,9 @@
              {:dependencies [[javax.servlet/servlet-api "2.5"]
                              [ring-mock "0.1.5"]]}}
 
-  :plugins [[lein-ring "0.12.4"]
-            [com.jakemccrary/lein-test-refresh "0.23.0"]])
+  :main web-server-restful.handler
+
+  :plugins [
+            [lein-ring "0.12.4"]
+            [com.jakemccrary/lein-test-refresh "0.23.0"]
+            ])

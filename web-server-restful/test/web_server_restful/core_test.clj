@@ -6,80 +6,100 @@
 
 ;; Opted to use with-redefs as opposed to dynamic var binding.
 
-(defexpect creating-sensor
-  (with-redefs [sensor-list (atom [])]
-    (let [sensor {:id "1", :type :motion, :room-id "1", :status 1}]
-      (expect sensor
-              (do
-                (create-sensor sensor)
-                (first (get-all-sensors)))))))
+;; ----- Rooms -----
 
+(defexpect create-room
+  (with-redefs [room-map (atom {})]
+    (let [id (uuid)
+          name "living"]
+      (expect {:id id :name name}
+              (do
+                (register-room id name)
+                (get-room id))))))
+
+;; ----- Sensors -----
+;; Progblem with test. Date not as expected.
+;; How can I freeze the date when creating an event so it can match
+;; expectations? or How to ignore a certain part of the output?
+(defexpect creating-sensor
+  (with-redefs [sensor-map (atom {})]
+    (let [id (uuid)
+          date (now)]
+      (expect {:id id :type :motion :room-id "1" :status 1 :last-updated date}
+              (do
+                (register-sensor id :motion "1" 1)
+                @(get-sensor-atom id))))))
 
 (defexpect createing-multiple-sensors
-  (with-redefs [sensor-list (atom [])]
+  (with-redefs [sensor-map (atom {})]
     (expect 3
             (do
-              (create-sensor
-               {:id "1", :type :motion, :room-id "1", :status 1})
-              (create-sensor
-               {:id "2", :type :motion, :room-id "1" :status 1})
-              (create-sensor
-               {:id "3", :type :motion, :room-id "1" :status 1})
-              (get-atom-list-count sensor-list)))))
+              (register-sensor "1" :motion "1" 1)
+              (register-sensor "2" :motion "1" 1)
+              (register-sensor "3" :motion "1" 1)
+              (get-atom-list-count sensor-map)))))
 
 (defexpect creating-invalid-sensor-nounique
-  (with-redefs [sensor-list (atom [])]
+  (with-redefs [sensor-map (atom {})]
     (expect 1
             (do
-              (create-sensor
-               {:id "1", :type :motion, :room-id "living" :status 1})
-              (create-sensor
-               {:id "1", :type :motion, :room-id "living" :status 1})
-              (get-atom-list-count sensor-list)))))
+              (register-sensor "1" :motion "1" 1)
+              (register-sensor "1" :motion "1" 1)
+              (get-atom-list-count sensor-map)))))
 
-(defexpect validate-sensor
-  (expecting "a valid sensor has an id, type, room-id it is in, and status"
-             (expect false (valid-sensor? {:type :motion, :room-id "1"}))
-             (expect false (valid-sensor? {:id "1", :room-id "1"}))
-             (expect false (valid-sensor? {:id "1", :type :motion}))
-             (expect false (valid-sensor? {:wrong-keys "1"}))))
 
-;; (defexpect validate-event ;;   )
+
+
+
+;; ----- Events -----
 
 (defexpect creating-event
-  (with-redefs [event-log (atom [])]
-    (expect 1
-            (do
-              (create-event {:id "1" :type "motion"})
-              (get-atom-list-count event-log)))))
-
-(defexpect creating-event
-  (with-redefs [event-log (atom [])]
-    (let [event {:id "1", :type :motion, :room-id "1" :status 1}]
-      (expect event
+  (with-redefs [event-log (atom {})
+                sensor-map (atom {})]
+    (let [date (now)
+          sensor-id "1"]
+      (expect {:id "event-id", :timestamp date, :sensor-id sensor-id, :status 1}
               (do
-                (create-event event)
-                (get-all-events))))))
+                (register-sensor sensor-id :motion "room-1" 1)
+                (log-event "event-id" date sensor-id 1)
+                (get-event "event-id"))))))
+
 
 (defexpect creating-multiple-events
-  (with-redefs [event-log (atom [])]
+  (with-redefs [event-log (atom {})]
     (expect 3
-            (do
-              (create-event
-               {:id "1", :type :motion, :room-id "1" :status 1})
-              (create-event
-               {:id "2", :type :motion, :room-id "1" :status 1})
-              (create-event
-               {:id "3", :type :motion, :room-id "1" :status 1})
-              (get-all-events)))))
+            (let [date (now)]
+              (do
+                (register-sensor "sens-1" :motion "1" 1)
+                (log-event "1" date "sens-1" 1)
+                (log-event "2" date "sens-1" 1)
+                (log-event "3" date "sens-1" 1)
+                ;; (get-all-events))))))
+                (get-atom-list-count event-log))))))
 
+(defexpect update-light-sensor-past-threshold
+  (with-redefs [event-log (atom {})
+                sensor-map (atom {})]
+    (expect 3
+            (let [date (now)]
+              (do
+                (register-sensor "sens-1" :motion "1" 1)
+                (log-event "1" date "sens-1" 1)
+                (log-event "2" date "sens-1" 1)
+                (log-event "3" date "sens-1" 1)
+                (get-atom-list-count event-log))))))
 
-;; (defexpect sensor-endpoint
-;;   (let [response (handler/app (mock/request :get "/sensors"))]
-;;     (expect 200
-;;             ((:status response)))
-;;     (expect "application-json"
-;;             (get-in response [:headers "ContentType"]))))
+;; ---- Testing API endpionts -----
+
+(defexpect sensor-endpoint
+  (let [response (handler/app (mock/request :get "/sensors"))]
+    (expect 200
+            (:status response))
+    (expect "application-json"
+            (get-in response [:headers "Content-Type"]))
+    ))
+
+;; (defexpect post-request-should-create-)
 
 ;; (defexpect events-endpoint
 ;;   (let [response (handler/app (mock/request :get "/events"))]
@@ -88,7 +108,7 @@
 ;;     (expect "application-json"
 ;;             (get-in response [:headers "ContentType"]))))
 
-;; (defexpect not-found-route
-;;   (let [response (handler/app (mock/request :get "/bogus-route"))]
-;;     (expect 404
-;;             ((:status response)))))
+(defexpect not-found-route
+  (let [response (handler/app (mock/request :get "/bogus-route"))]
+    (expect 404
+            (:status response))))
