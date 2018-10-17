@@ -7,30 +7,29 @@
   "Generate unique id"
   [] (str (java.util.UUID/randomUUID)))
 
-;; ----- Database/identities----
 
-;; to delete
-(def valid-event-keys
-  [:id :type :room-id :status])
+;; What our data should look like
 
 (def sensor
   "example sensor"
-  {:id "1"
+  {:id "sensor-uuid-1"
    :type :motion
-   :room-id "1"
+   :room-id "rooom-uuid-1"
    :status 1})
 
 (def room
   "example room"
-  {:id "1"
+  {:id "room-uuid-1"
    :name "living"})
 
 (def event
   "example room"
   (let [date (now)]
-    {:id "1" :timestamp date :sensor-id "1"}))
-;; => {:id 1, :timestamp #inst "2018-10-11T23:28:40.343-00:00", :sensor-id 1}
+    {:id "event-uuid-1" :timestamp date :sensor-id "sensor-uuid-1"}))
+;; => {:id "event-uuid-1", :timestamp #inst "2018-10-17T05:53:53.907-00:00", :sensor-id "sensor-uuid-1"}
 
+
+;; ----- Database/identities----
 (def event-log (atom {}))
 
 (def sensor-map (atom {}))
@@ -38,7 +37,7 @@
 (def room-map (atom {}))
 
 ;; I think every sensor created here should be an atom with an attached,
-;; watcher to log an evekt whenever its state get's changed
+;; watcher to log an event whenever its state get's changed
 
 ;; (def db
 ;;   {:events event-log
@@ -59,7 +58,7 @@
   "TODO"
   true)
 
-(defn room-exists? [id]
+(defn room-exist? [id]
   (contains? @room-map (keyword id)))
 
 ;; ---- Getter -----
@@ -78,6 +77,10 @@
 
 (defn get-all-events []
   @event-log)
+
+(defn get-all-rooms []
+  @room-map)
+
 
 (defn get-sensor-atom [id]
   ((keyword id) @sensor-map))
@@ -109,13 +112,14 @@
 
 (defn register-room
   [id name]
-  (if (and (not (room-exists? id)))
+  (if (and (not (room-exist? id)))
     (let [new-room {(keyword id) {:id id
                                   :name name}}]
       (swap! room-map conj new-room))
     nil))
 
 ;;---- Atom Watchers ----
+;; Watchers are Used to create an event log when a sensor status changes
 
 (defn motion-alert
   [key watched old-stte new-state]
@@ -123,7 +127,7 @@
     (println "motion detected")
     (log-event
      (uuid)
-     (:timestamp new-state)
+     (:last-updated new-state)
      (:id new-state)
      (:status new-state))))
 
@@ -135,7 +139,7 @@
         (println "lumens over threshold, logging event")
         (log-event
          (uuid)
-         (:timestamp new-state)
+         (:last-updated new-state)
          (:id new-state)
          (:status new-state))))))
 
@@ -147,7 +151,7 @@
         (println "lumens over threshold, logging event")
         (log-event
          (uuid)
-         (:timestamp new-state)
+         (:last-updated new-state)
          (:id new-state)
          (:status new-state))))))
 
@@ -162,11 +166,12 @@
 
 
 (defn register-sensor
-  "Check if the sensor with id exist. If not update sensor-map
-  with new sensor with given parameters"
+  "Adds a sensor (atom) to the sensor-map
+  Return the sensor that was added"
 
   [id type room-id status]
-  (if (not (sensor-exist? id))
+  (if (and (not (sensor-exist? id))
+           (room-exist? room-id))
     (let [type-kw (keyword type) ;; type may come in as text
           new-sensor (atom {:id id
                             :type type-kw
@@ -175,7 +180,8 @@
                             :last-updated (now)})
           new-entry {(keyword id) new-sensor}]
       (add-watch new-sensor :status-update (type-kw watchers))
-      (swap! sensor-map conj new-entry))
+      (swap! sensor-map conj new-entry)
+      @(get-sensor-atom id))
     nil))
 
 
@@ -187,22 +193,15 @@
 
 ;; Testing code
 
-(def sensor-1 (uuid))
-(def sensor-2 (uuid))
+;; (def sensor-1 (uuid))
+;; (def sensor-2 (uuid))
+;; (def room-1 (uuid))
 
-(register-sensor sensor-1 "light" "room-1" 1)
-(register-sensor sensor-2 "door" "room-1" 1)
-(get-sensor-atom sensor-1)
-;; (get-sensor-atom "7c2f63ed-aebd-43ea-8399-094b330f5a3b")
+;; (register-room room-1 "my-first-room")
+;; (register-sensor sensor-1 "light" room-1 1)
+;; (register-sensor sensor-2 "door" room-1 1)
+;; (get-sensor-atom sensor-1)
 ;; (update-sensor-status sensor-1 (now) 101)
-
-
-;; ;; (log-event event-1 (now) sensor-1 1)
+;; (update-sensor-status sensor-1 (now) 102)
 ;; (get-all-events)
-
-
-;; (def a (atom {:a 1
-;;               :b 2
-;;               :c 3}))
-;; (swap! a conj {:a 2 :c 4})
-;; (identity @a)
+;; (get-atom-list-count event-log)

@@ -2,9 +2,19 @@
 
 ## Usage
 
+#### Testing
+```
+lein autoexpect
+```
+
+#### Running
+```
+lein run 8000
+```
+
 ### Questions to Consider
 
-- jkkj
+- 
 
 # Project
 

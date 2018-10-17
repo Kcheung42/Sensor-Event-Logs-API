@@ -16,12 +16,15 @@
          :nrepl {:start? true
                  :port 9998}}
   :profiles {:dev
-             {:dependencies [[javax.servlet/servlet-api "2.5"]
-                             [ring-mock "0.1.5"]]}}
+             {:dependencies [
+                             [javax.servlet/servlet-api "2.5"]
+                             [ring/ring-mock "0.3.2"]
+                             ]}}
 
   :main web-server-restful.handler
 
   :plugins [
             [lein-ring "0.12.4"]
             [com.jakemccrary/lein-test-refresh "0.23.0"]
+            [lein-autoexpect "1.0"]
             ])

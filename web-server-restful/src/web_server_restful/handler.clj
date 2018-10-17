@@ -1,6 +1,8 @@
 (ns web-server-restful.handler
   (:use compojure.core
         ring.middleware.json
+        ring.middleware.keyword-params
+        ring.middleware.params
         clojure.core)
 
   (:require [compojure.handler :as handler]
@@ -12,6 +14,8 @@
                                              get-sensor-atom
                                              get-event
                                              register-sensor
+                                             register-room
+                                             get-all-rooms
                                              update-sensor-status]]))
 
 ;; ;; defn- is like def but non-public def
@@ -28,9 +32,8 @@
    :headers {"Content-Type" "text/plain;=us-ascii"}
    :body (str request)})
 
-(defn handle-register-sensor [id type room-id status]
-  (response
-   (register-sensor id type room-id status)))
+(defn handle-register-sensor [uuid type room-id status]
+  (response (register-sensor uuid type room-id status)))
 
 (defn handle-get-all-sensors []
   {:status 200
@@ -38,10 +41,17 @@
    :body (get-all-sensors)})
 
 (defn handle-get-sensor [id]
-  (response @(get-sensor-atom id)))
+  {:status 200
+   :headers {"Content-Type" "application-json"}
+   :body @(get-sensor-atom id)})
+;; (response @(get-sensor-atom id)) ;; same as above
 
 (defn handle-get-all-rooms []
-  (response ("TODO: here is your room")))
+  (response (get-all-rooms)))
+
+(defn handle-create-room [uuid name]
+  (println (str "uuid:" uuid " name:" name))
+  (response (register-room uuid name)))
 
 
 
@@ -53,19 +63,25 @@
              (GET "/" [] (handle-get-all-sensors))
              (GET "/:uuid" [uuid] (handle-get-sensor uuid))
              (POST "/register"
-                   {{:keys [uuid type room-id status]} :body}
+                   {{:strs [uuid type room-id status]} :body} ;; destructuring the request
                    (handle-register-sensor uuid type room-id status))))
 
+  ;; Subroutes for localhost:8000/rooms/
   (context "/rooms" []
            (defroutes room-routes
-             (GET "/" [] (handle-get-all-rooms))))
+             (GET "/" [] (handle-get-all-rooms))
+             ;;TODO (GET "/uuid" [] (handle-get-all-rooms))
 
+             (POST "/register"
+                   {{:strs [uuid name]} :body} ; must use :str instead of :keys
+                   (handle-create-room uuid name))))
+
+  ;; TODO events routes
   ;; (context "/events" []
   ;;          (defroutes sensor-routes
   ;;            (GET "/" [] (get-all-sensors))
-
   (GET "/" [] "Welcome to Starcity")
-  (GET "/request" request (app-handler request))
+  (GET "/request" request (app-handler request)) ;; TODO remove
   (route/not-found
    (response {:message "Page not found"})))
 
@@ -82,17 +98,11 @@
   (-> (handler/api app-routes)
       wrap-log-request
       wrap-json-response
-      wrap-json-body))
+      wrap-json-body
+      wrap-keyword-params
+      wrap-params))
 
 ;; ----- start server ----
 (defn -main
   [port]
   (jetty/run-jetty app {:port (Integer. port)}))
-
-;; curl -X PUT -H "Content-Type: application/json" \
-;; -d '{"attrs": {"tag": "foo"}}' \
-;; {"uuid" : "1"
-;;  "type" : "door"
-;;  ""}
-
-;; http://localhost:8000/register/1
