@@ -50,7 +50,6 @@
   (response (get-all-rooms)))
 
 (defn handle-create-room [uuid name]
-  (println (str "uuid:" uuid " name:" name))
   (response (register-room uuid name)))
 
 

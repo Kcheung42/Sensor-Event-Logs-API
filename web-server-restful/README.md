@@ -15,6 +15,9 @@ lein run 8000
 ### Questions to Consider
 
 - 
+#### TODO
+
+- convert from using atoms to refs
 
 # Project
 

@@ -87,7 +87,6 @@
             []
             (repeatedly n #(rand-nth (vec sensor-types))))
     nil))
-
 ;; Sample Output
 ;; (make-n-random-sensors 3)
 #_[{:id "bed73068-fdfe-4c27-a176-30002ad2354a",
@@ -128,26 +127,35 @@
     (println (str "id: " id " name: " name))
     (future (client/post "http://localhost:8000/rooms/register"
                          {:body (generate-string {:uuid id
-                                                  :name name})}))))
+                                                  :name name})
+                          :content-type :json}))))
+
+(defn call-api-register-sensor
+  "Post request to register a room in the database"
+  [sensor]
+  (let [{:keys [id type room-id status]} sensor]
+    (future (client/post "http://localhost:8000/sensors/register"
+                         {:body (generate-string {:uuid id
+                                                  :type type
+                                                  :room-id room-id
+                                                  :status 1})
+                          :content-type :json}))))
 
 (defn -main
   []
+
+  ;; ---- Generate rooms and sensors
   (update-room-list (make-5-rooms))
-  (update-sensor-list (make-n-random-sensors 5))
-  ;; TODO
+  (update-sensor-list (make-n-random-sensors 15))
+
   ;; ----- Send Room-list and Sensor-list to be created over HTTP
-
-  ;; Creates one room
-  (client/post "http://localhost:8000/rooms/register"
-
-               {:body (generate-string {:uuid "1"
-                                        :name "living"})
-                :content-type :json})
-
-  (map call-api-register-room @room-list)
+  (doseq [room @room-list]
+    (call-api-register-room room))
+  (doseq [room @sensor-list]
+    (call-api-register-sensor room))
   )
 
-;; (-main)
+(-main)
 
 
 ;;--- testing http requests -----
