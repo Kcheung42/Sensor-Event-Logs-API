@@ -77,6 +77,13 @@
             []
             map)))
 
+;; (defn get-all-sensors
+;;   "Returns a dereferenced map of all sensors"
+;;   []
+;;   (map (fn[[k v] m]
+;;          (deref v))
+       ;; @sensor-map))
+
 (defn get-all-events []
   @event-log)
 
@@ -88,6 +95,13 @@
                 (conj results @v)))
             []
             map)))
+
+;; (defn get-all-sensors
+;;   "Returns a dereferenced map of all sensors"
+;;   []
+;;   (map (fn[[k v] m]
+;;          (deref v))
+;; @room-map))
 
 
 (defn get-sensor-atom [id]
@@ -117,7 +131,7 @@
   [id timestamp sensor-id status]
   (if (and (not (event-exist? id))
            (sensor-exist? sensor-id))
-    (let [new-event (create-event)]
+    (let [new-event (create-event id timestamp sensor-id status)]
       (swap! event-log conj new-event))
     nil))
 
@@ -199,7 +213,7 @@
            (room-exist? room-id))
     (let [new-entry (create-sensor id type room-id status)]
 
-      ;; refs and dosync probably be better here
+      ;; refs and dosync probably be better here. 
       (swap! sensor-map conj new-entry)
       (swap! (get-room-atom room-id) update-in [:sensors] conj id)
       @(get-sensor-atom id))

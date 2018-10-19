@@ -1,8 +1,14 @@
 (ns event-simulator.core
   (:require [clj-http.client :as client]
-            [cheshire.core :refer :all]))
+            [cheshire.core :refer :all]
+            ;; [clojure.core.async :refer :all]
+            [clojure.core.async
+             :as a
+             :refer [>! <! >!! <!! go chan buffer close! thread
+                     alts! alts!! timeout go-loop]]
+            ))
 
-;; ## Part 1: Sensor Event Simulation
+
 
 ;; ---- Constants and Storage-----
 
@@ -23,11 +29,13 @@
 ;;        this is to simulate when sensor is activated and sends
 ;;        data to the server
 (def sensor-types
-  {"motion" [1 10]
-   "light" [10 30]
-   "door" [60 120]})
+  {"motion" [10 20]
+   "light" [20 30]
+   "door" [30 60]})
 
 ;; --- Helper functions
+
+(defn now [] (new java.util.Date))
 
 (defn get_date []
   (java.util.Date))
@@ -43,6 +51,16 @@
 (defn get-random-sensor-type []
   (rand-nth (vec sensor-types)))
 
+(defn rand-interval
+  "Given a tuple of an interval range
+  Return a random integer in range"
+  [interval]
+  (let [min (first interval)
+        max (second interval)
+        diff (- max min)]
+    (+ (rand-int (+ 1 diff)) min)))
+;; (rand-interval [6 10])
+;; => 8
 
 ;; --- Create Sensors and Rooms ----
 
@@ -75,6 +93,7 @@
      :status 1
      :interval interval}))
 
+;; Testing code. To Remove
 ;; (get-random-room-id)
 ;; (rand-nth (vec sensor-types))
 ;; (make-one-sensor (rand-nth (vec sensor-types)) (get-random-room-id))
@@ -113,10 +132,6 @@
 (defn update-sensor-list [list-of-sensors]
   (swap! sensor-list concat list-of-sensors))
 
-;; ---- Run Simulation ----
-
-
-
 ;; -----
 
 ;; Calling Web Server API
@@ -141,21 +156,51 @@
                                                   :status 1})
                           :content-type :json}))))
 
+;; ---- Run Simulation ----
+
+;; first pass working but does not loop
+(defn start-sensor [sensor]
+  (go-loop [seconds (rand-interval (:interval sensor))]
+    (when (pos? (:status sensor))
+      (println (str "Sensor: " (:id sensor) " will wait " seconds " seconds!"))
+      (<! (timeout (* seconds 1000)))
+      (println (str "Sensor: " (:id sensor) " logging event at:" (now)))
+      (recur (rand-interval (:interval sensor))))))
+
+(defn run []
+  (doseq [sensor @sensor-list]
+    (start-sensor sensor))
+  (chan))
+
+(defn user-inputs
+  []
+  (case (read-line)
+    "a" (do (println "a command") (recur))
+    "b" (do (println "a command") (recur))
+    "quit" (do (println "Quitting Simulation") (System/exit 0))
+    (do (println "invalid command") (recur))))
+
 (defn -main
   []
-
+  (println "Starting Sensor Simulation ... ")
+  (println "Available Commands are as follows:")
+  (println "a : a command")
+  (println "b : b command")
+  (println "quit : quit simulation ")
+  
   ;; ---- Generate rooms and sensors
   (update-room-list (make-5-rooms))
-  (update-sensor-list (make-n-random-sensors 15))
+  (update-sensor-list (make-n-random-sensors 3))
 
   ;; ----- Send Room-list and Sensor-list to be created over HTTP
   (doseq [room @room-list]
     (call-api-register-room room))
   (doseq [room @sensor-list]
     (call-api-register-sensor room))
-  )
+  (run)
+  (user-inputs))
 
-(-main)
+;; (-main)
 
 
 ;;--- testing http requests -----

@@ -9,6 +9,7 @@
                  [clojure.joda-time "0.7.0"]
                  [clj-http "3.9.1"]
                  [cheshire "5.8.1"]
+                 [org.clojure/core.async "0.4.474"]
                  ]
   :plugins [
             [com.jakemccrary/lein-test-refresh "0.23.0"]

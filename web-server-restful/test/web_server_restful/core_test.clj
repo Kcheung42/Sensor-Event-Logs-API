@@ -15,7 +15,7 @@
       (expect {:id id :name name}
               (do
                 (register-room id name)
-                (get-room id))))))
+                @(get-room-atom id))))))
 
 ;; ----- Sensors -----
 ;; Progblem with test. Date not as expected.
