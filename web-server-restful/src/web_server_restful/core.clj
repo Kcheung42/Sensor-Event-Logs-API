@@ -82,7 +82,7 @@
 ;;   []
 ;;   (map (fn[[k v] m]
 ;;          (deref v))
-       ;; @sensor-map))
+;; @sensor-map))
 
 (defn get-all-events []
   @event-log)
@@ -150,7 +150,7 @@
 (defn motion-alert
   [key watched old-stte new-state]
   (do
-    (println "motion detected")
+    (println "Motion detected")
     (log-event
      (uuid)
      (:last-updated new-state)
@@ -160,29 +160,30 @@
 (defn light-alert
   [key watched old-stte new-state]
   (let [lumen (:status new-state)]
-    (if (> lumen 100)
+    ;; (if (> lumen 100)
       (do
-        (println "lumens over threshold, logging event")
+        (println "So much Light! Someone's in Here")
         (log-event
          (uuid)
          (:last-updated new-state)
          (:id new-state)
-         (:status new-state))))))
+         (:status new-state)))))
 
 (defn door-alert
   [key watched old-stte new-state]
   (let [lumen (:status new-state)]
-    (if (> lumen 100)
       (do
-        (println "lumens over threshold, logging event")
+        (println "Someone Used the Door")
         (log-event
          (uuid)
          (:last-updated new-state)
          (:id new-state)
-         (:status new-state))))))
+         (:status new-state)))))
 
 (def watchers
-  {:light light-alert})
+  {:light light-alert
+   :motion motion-alert
+   :door door-alert})
 
 ;;---- Atom Watchers End ----
 
@@ -213,7 +214,7 @@
            (room-exist? room-id))
     (let [new-entry (create-sensor id type room-id status)]
 
-      ;; refs and dosync probably be better here. 
+      ;; refs and dosync probably be better here.
       (swap! sensor-map conj new-entry)
       (swap! (get-room-atom room-id) update-in [:sensors] conj id)
       @(get-sensor-atom id))
@@ -224,19 +225,21 @@
 
 ;; --- Update ----
 (defn update-sensor-status [id timestamp status]
-  (swap! (get-sensor-atom id) conj {:last-updated timestamp :status status}))
+  (if-let [sensor (get-sensor-atom id)]
+    (swap! sensor conj {:last-updated timestamp :status status})))
 
 ;; Testing code
 
 ;; (def sensor-1 (uuid))
-;; (def sensor-2 (uuid))
 (def room-1 (uuid))
 
 (register-room room-1 "Bogus-Room-404")
 (register-sensor "Bogus-Sensor" "light" room-1 1)
-;; (register-sensor sensor-2 "door" room-1 1)
-;; (get-sensor-atom sensor-1)
+(update-sensor-status "Bogus-Sensor" (now) 102)
+(update-sensor-status "Bogus-Sensor" (now) 101)
+(get-all-events)
+
+;; (get-sensor-atom "Bogus-Sensor")
 ;; (update-sensor-status sensor-1 (now) 101)
-;; (update-sensor-status sensor-1 (now) 102)
 ;; (get-all-events)
 ;; (get-atom-list-count event-log)

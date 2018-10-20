@@ -156,6 +156,16 @@
                                                   :status 1})
                           :content-type :json}))))
 
+
+(defn call-api-update-sensor
+  "Post request to update a sensor's status database"
+  [id timestamp new-status]
+  (client/post "http://localhost:8000/sensors/update"
+               {:body (generate-string {:uuid id
+                                        :timestamp timestamp
+                                        :status new-status})
+                :content-type :json}))
+
 ;; ---- Run Simulation ----
 
 ;; first pass working but does not loop
@@ -164,7 +174,10 @@
     (when (pos? (:status sensor))
       (println (str "Sensor: " (:id sensor) " will wait " seconds " seconds!"))
       (<! (timeout (* seconds 1000)))
-      (println (str "Sensor: " (:id sensor) " logging event at:" (now)))
+      (let [timestamp (now)
+            sensor-id (:id sensor)]
+        (println (str "Sensor: " sensor-id " logging event at:" timestamp))
+        (call-api-update-sensor sensor-id timestamp (rand-int 20)))
       (recur (rand-interval (:interval sensor))))))
 
 (defn run []
@@ -187,7 +200,7 @@
   (println "a : a command")
   (println "b : b command")
   (println "quit : quit simulation ")
-  
+
   ;; ---- Generate rooms and sensors
   (update-room-list (make-5-rooms))
   (update-sensor-list (make-n-random-sensors 3))
@@ -200,8 +213,10 @@
   (run)
   (user-inputs))
 
+
 ;; (-main)
 
+;; (call-api-update-sensor "Bogus-Sensor" (now) (rand-int 20))
 
 ;;--- testing http requests -----
 

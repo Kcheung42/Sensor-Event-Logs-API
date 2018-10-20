@@ -35,6 +35,11 @@
 (defn handle-register-sensor [uuid type room-id status]
   (response (register-sensor uuid type room-id status)))
 
+(defn handle-update-sensor [uuid timestamp new-status]
+  (response (update-sensor-status uuid timestamp new-status)))
+
+;; --- Getters
+
 (defn handle-get-all-sensors []
   {:status 200
    :headers {"Content-Type" "application-json"}
@@ -53,6 +58,8 @@
   (response (register-room uuid name)))
 
 
+(defn handle-get-all-events []
+  (response (get-all-events)))
 
 ;; ----- Routes -----
 
@@ -63,7 +70,11 @@
              (GET "/:uuid" [uuid] (handle-get-sensor uuid))
              (POST "/register"
                    {{:strs [uuid type room-id status]} :body} ;; destructuring the request
-                   (handle-register-sensor uuid type room-id status))))
+                   (handle-register-sensor uuid type room-id status))
+             (POST "/update"
+                   {{:strs [uuid timestamp status]} :body} ;; destructuring the request
+                   (handle-update-sensor uuid timestamp status))
+             ))
 
   ;; Subroutes for localhost:8000/rooms/
   (context "/rooms" []
@@ -74,6 +85,9 @@
              (POST "/register"
                    {{:strs [uuid name]} :body} ; must use :str instead of :keys
                    (handle-create-room uuid name))))
+  (context "/events" []
+           (defroutes events
+             (GET "/" [] (handle-get-all-events))))
 
   ;; TODO events routes
   ;; (context "/events" []
