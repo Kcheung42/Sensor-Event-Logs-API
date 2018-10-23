@@ -46,6 +46,7 @@
 (def sensor-types #{:motion :light :door})
 
 
+
 ;; ---- Validation ----
 
 (defn sensor-exist? [id]
@@ -96,13 +97,6 @@
             []
             map)))
 
-;; (defn get-all-sensors
-;;   "Returns a dereferenced map of all sensors"
-;;   []
-;;   (map (fn[[k v] m]
-;;          (deref v))
-;; @room-map))
-
 
 (defn get-sensor-atom [id]
   ((keyword id) @sensor-map))
@@ -142,7 +136,7 @@
                                         :name name
                                         :sensors []})}]
       (swap! room-map conj new-room))
-    nil))
+    "Error: Room Not Registered"))
 
 ;;---- Atom Watchers ----
 ;; Watchers are used to automatically create an event logs when a sensor atom status changes
@@ -161,24 +155,24 @@
   [key watched old-stte new-state]
   (let [lumen (:status new-state)]
     ;; (if (> lumen 100)
-      (do
-        (println "So much Light! Someone's in Here")
-        (log-event
-         (uuid)
-         (:last-updated new-state)
-         (:id new-state)
-         (:status new-state)))))
+    (do
+      (println "So much Light! Someone's in Here")
+      (log-event
+       (uuid)
+       (:last-updated new-state)
+       (:id new-state)
+       (:status new-state)))))
 
 (defn door-alert
   [key watched old-stte new-state]
   (let [lumen (:status new-state)]
-      (do
-        (println "Someone Used the Door")
-        (log-event
-         (uuid)
-         (:last-updated new-state)
-         (:id new-state)
-         (:status new-state)))))
+    (do
+      (println "Someone Used the Door")
+      (log-event
+       (uuid)
+       (:last-updated new-state)
+       (:id new-state)
+       (:status new-state)))))
 
 (def watchers
   {:light light-alert
@@ -218,8 +212,7 @@
       (swap! sensor-map conj new-entry)
       (swap! (get-room-atom room-id) update-in [:sensors] conj id)
       @(get-sensor-atom id))
-    nil))
-
+    "Error Sensor Registered"))
 
 
 

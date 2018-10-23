@@ -10,6 +10,7 @@
                  [ring/ring-core "1.7.0"]
                  [ring/ring-jetty-adapter "1.7.0"]
                  [ring/ring-json "0.5.0-beta1"]
+                 [org.clojure/core.async "0.4.474"]
                  ]
 
   :ring {:handler web-server-restful.handler/app

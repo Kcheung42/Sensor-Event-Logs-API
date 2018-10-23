@@ -1,12 +1,13 @@
 (ns event-simulator.core
-  (:require [clj-http.client :as client]
-            [cheshire.core :refer :all]
-            ;; [clojure.core.async :refer :all]
-            [clojure.core.async
-             :as a
-             :refer [>! <! >!! <!! go chan buffer close! thread
-                     alts! alts!! timeout go-loop]]
-            ))
+  (:require
+   [clj-http.client :as client]
+   [cheshire.core :refer :all]
+   ;; [clojure.core.async :refer :all]
+   [clojure.core.async
+    :as a
+    :refer [>! <! >!! <!! go chan buffer close! thread
+            alts! alts!! timeout go-loop]]
+   ))
 
 
 
@@ -39,6 +40,10 @@
 
 (defn get_date []
   (java.util.Date))
+
+(defn safe-println [& more]
+  (.write *out* (str (clojure.string/join " " more) "\n")))
+
 
 (defn uuid
   "Generate unique id"
@@ -140,21 +145,22 @@
   [room]
   (let [{:keys [id name]} room]
     (println (str "id: " id " name: " name))
-    (future (client/post "http://localhost:8000/rooms/register"
+    (client/post "http://localhost:8000/rooms/register"
                          {:body (generate-string {:uuid id
                                                   :name name})
-                          :content-type :json}))))
+                          :content-type :json})))
 
 (defn call-api-register-sensor
   "Post request to register a room in the database"
   [sensor]
   (let [{:keys [id type room-id status]} sensor]
-    (future (client/post "http://localhost:8000/sensors/register"
+    (safe-println (str "Sensor: " id " Type: " type " In: " room-id))
+    (client/post "http://localhost:8000/sensors/register"
                          {:body (generate-string {:uuid id
                                                   :type type
                                                   :room-id room-id
                                                   :status 1})
-                          :content-type :json}))))
+                          :content-type :json})))
 
 
 (defn call-api-update-sensor
@@ -181,6 +187,7 @@
       (recur (rand-interval (:interval sensor))))))
 
 (defn run []
+  (println "Running Sensors")
   (doseq [sensor @sensor-list]
     (start-sensor sensor))
   (chan))
@@ -195,39 +202,26 @@
 
 (defn -main
   []
-  (println "Starting Sensor Simulation ... ")
+  (safe-println "Starting Sensor Simulation ... ")
   (println "Available Commands are as follows:")
   (println "a : a command")
   (println "b : b command")
   (println "quit : quit simulation ")
 
-  ;; ---- Generate rooms and sensors
+  ;; ---- Generate rooms and senso
   (update-room-list (make-5-rooms))
-  (update-sensor-list (make-n-random-sensors 3))
+  (update-sensor-list (make-n-random-sensors 20))
 
   ;; ----- Send Room-list and Sensor-list to be created over HTTP
   (doseq [room @room-list]
     (call-api-register-room room))
-  (doseq [room @sensor-list]
-    (call-api-register-sensor room))
+  (doseq [sensor @sensor-list]
+    (call-api-register-sensor sensor))
+
+  ;; --- start the simulation
   (run)
+
+  ;; Loop for accepting user inputs
   (user-inputs))
 
-
 ;; (-main)
-
-;; (call-api-update-sensor "Bogus-Sensor" (now) (rand-int 20))
-
-;;--- testing http requests -----
-
-;; (client/get "http://localhost:8000/sensors")
-
-;; Registering one room
-
-;; Registering one sensor
-;; (client/post "http://localhost:8000/sensors/register"
-;;              {:body (generate-string {:uuid "1"
-;;                                       :type "living"
-;;                                       :room-id "1"
-;;                                       :status "1"})
-;;               :content-type :json})

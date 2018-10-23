@@ -16,7 +16,11 @@
                                              register-sensor
                                              register-room
                                              get-all-rooms
-                                             update-sensor-status]]))
+                                             update-sensor-status]]
+            [clojure.core.async
+             :as a
+             :refer [>! <! go chan]]
+            ))
 
 ;; ;; defn- is like def but non-public def
 ;; (defn- str-to [num]
@@ -24,6 +28,14 @@
 
 ;; (defn- str-from [num]
 ;;   (apply str (interpose ", " (reverse (range 1 (inc num))))))
+
+
+;; ---- Channels -----
+
+;; Setting up Channels for asychronous handling of Post Requests
+;; (def sensor-update-chan (chan))
+;; (def room-update-chan (chan))
+(def q-chan (chan))
 
 ;; ---- API handlers -----
 
@@ -33,10 +45,12 @@
    :body (str request)})
 
 (defn handle-register-sensor [uuid type room-id status]
-  (response (register-sensor uuid type room-id status)))
+  (go (>! q-chan (register-sensor uuid type room-id status)))
+  (response "Sensor Registered Successfully"))
 
 (defn handle-update-sensor [uuid timestamp new-status]
-  (response (update-sensor-status uuid timestamp new-status)))
+  (go (>! q-chan (update-sensor-status uuid timestamp new-status)))
+  (response "Update Successful"))
 
 ;; --- Getters
 
@@ -55,7 +69,8 @@
   (response (get-all-rooms)))
 
 (defn handle-create-room [uuid name]
-  (response (register-room uuid name)))
+  (go (>! q-chan (register-room uuid name)))
+  (response "Room Registered Successfully"))
 
 
 (defn handle-get-all-events []
@@ -115,7 +130,9 @@
       wrap-keyword-params
       wrap-params))
 
+
 ;; ----- start server ----
 (defn -main
   [port]
+  (go (while true (println (<! q-chan))))
   (jetty/run-jetty app {:port (Integer. port)}))
