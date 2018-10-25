@@ -22,19 +22,11 @@
              :refer [>! <! go chan]]
             ))
 
-;; ;; defn- is like def but non-public def
-;; (defn- str-to [num]
-;;   (apply str (interpose ", " (range 1 (inc num)))))
-
-;; (defn- str-from [num]
-;;   (apply str (interpose ", " (reverse (range 1 (inc num))))))
-
 
 ;; ---- Channels -----
 
 ;; Setting up Channels for asychronous handling of Post Requests
-;; (def sensor-update-chan (chan))
-;; (def room-update-chan (chan))
+;; Post requests will put! onto the channel
 (def q-chan (chan))
 
 ;; ---- API handlers -----
@@ -46,17 +38,19 @@
 
 (defn handle-register-sensor [uuid type room-id status]
   (go (>! q-chan (register-sensor uuid type room-id status)))
-  (response "Sensor Registered Successfully"))
+  (response "Sensor Registered Successfully")) ;; should actually read response to determine success
 
 (defn handle-update-sensor [uuid timestamp new-status]
   (go (>! q-chan (update-sensor-status uuid timestamp new-status)))
-  (response "Update Successful"))
+  (response "Update Successful")) ;; should actually read response to determine success
 
 ;; --- Getters
 
 (defn handle-get-all-sensors []
   {:status 200
-   :headers {"Content-Type" "application-json"}
+   :headers {"Content-Type" "application-json"
+             "Access-Control-Allow-Origin" "*"
+             "Access-Control-Allow-Headers" "Content-Type"}
    :body (get-all-sensors)})
 
 (defn handle-get-sensor [id]
@@ -74,7 +68,11 @@
 
 
 (defn handle-get-all-events []
-  (response (get-all-events)))
+  {:status 200
+   :headers {"Content-Type" "application-json"
+             "Access-Control-Allow-Origin" "*"
+             "Access-Control-Allow-Headers" "Content-Type"}
+   :body (get-all-events)})
 
 ;; ----- Routes -----
 
@@ -95,19 +93,16 @@
   (context "/rooms" []
            (defroutes room-routes
              (GET "/" [] (handle-get-all-rooms))
-             ;;TODO (GET "/uuid" [] (handle-get-all-rooms))
-
+             ;;TODO (GET "/uuid" [uuid] (handle-get-room uuid))
              (POST "/register"
                    {{:strs [uuid name]} :body} ; must use :str instead of :keys
                    (handle-create-room uuid name))))
+
+  ;; Subroutes for localhost:8000/events/
   (context "/events" []
            (defroutes events
              (GET "/" [] (handle-get-all-events))))
 
-  ;; TODO events routes
-  ;; (context "/events" []
-  ;;          (defroutes sensor-routes
-  ;;            (GET "/" [] (get-all-sensors))
   (GET "/" [] "Welcome to Starcity")
   (GET "/request" request (app-handler request)) ;; TODO remove
   (route/not-found

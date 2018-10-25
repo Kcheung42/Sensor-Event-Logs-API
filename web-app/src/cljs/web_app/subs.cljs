@@ -6,3 +6,24 @@
  ::name
  (fn [db]
    (:name db)))
+
+(re-frame/reg-sub
+ ::loading?
+ (fn [db]
+   (:loading? db)))
+
+(re-frame/reg-sub
+ ::response
+ (fn [db]
+   (:response db)))
+
+
+(re-frame/reg-sub
+ ::sensors
+ (fn [db]
+   (:sensor db)))
+
+(re-frame/reg-sub
+ ::events
+ (fn [db]
+   (:events db)))

@@ -1,5 +1,8 @@
 (ns web-app.db)
 
 (def default-db
-  {:event-log []
-   :sensor-list []})
+  {:loading? true
+   :name "Starcity"
+   :response ""
+   :events {}
+   :sensors []})
