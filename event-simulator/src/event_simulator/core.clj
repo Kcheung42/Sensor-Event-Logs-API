@@ -174,7 +174,7 @@
 
 ;; ---- Run Simulation ----
 
-;; first pass working but does not loop
+;; Need to make status update to follow specification. i.e. door should be "closed" or "open"
 (defn start-sensor [sensor]
   (go-loop [seconds (rand-interval (:interval sensor))]
     (when (pos? (:status sensor))
@@ -210,7 +210,7 @@
 
   ;; ---- Generate rooms and senso
   (update-room-list (make-5-rooms))
-  (update-sensor-list (make-n-random-sensors 20))
+  (update-sensor-list (make-n-random-sensors 100))
 
   ;; ----- Send Room-list and Sensor-list to be created over HTTP
   (doseq [room @room-list]
