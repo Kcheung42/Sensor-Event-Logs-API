@@ -36,12 +36,14 @@
 
 (def room-map (atom {}))
 
-;; I think every sensor created here should be an atom with an attached,
+;; Each sensor is an atom with an attached,
 ;; watcher to log an event whenever its state get's changed
 
+;; May want to encapsulate in under db var.
 ;; (def db
 ;;   {:events event-log
-;; :sensors sensor-map})
+;;    :sensors sensor-map
+;;    :rooms room-map})
 
 (def sensor-types #{:motion :light :door})
 
@@ -77,13 +79,6 @@
                 (conj results @v)))
             []
             map)))
-
-;; (defn get-all-sensors
-;;   "Returns a dereferenced map of all sensors"
-;;   []
-;;   (map (fn[[k v] m]
-;;          (deref v))
-;; @sensor-map))
 
 (defn get-all-events []
   @event-log)
@@ -154,14 +149,14 @@
 (defn light-alert
   [key watched old-stte new-state]
   (let [lumen (:status new-state)]
-    ;; (if (> lumen 100)
+    (if (> lumen 100)
     (do
       (println "So much Light! Someone's in Here")
       (log-event
        (uuid)
        (:last-updated new-state)
        (:id new-state)
-       (:status new-state)))))
+       (:status new-state))))))
 
 (defn door-alert
   [key watched old-stte new-state]
@@ -221,18 +216,11 @@
   (if-let [sensor (get-sensor-atom id)]
     (swap! sensor conj {:last-updated timestamp :status status})))
 
-;; Testing code
 
-;; (def sensor-1 (uuid))
+;; Initial Entires to the Webserver
 (def room-1 (uuid))
-
 (register-room room-1 "Bogus-Room-404")
 (register-sensor "Bogus-Sensor" "light" room-1 1)
 (update-sensor-status "Bogus-Sensor" (now) 102)
 (update-sensor-status "Bogus-Sensor" (now) 101)
 (get-all-events)
-
-;; (get-sensor-atom "Bogus-Sensor")
-;; (update-sensor-status sensor-1 (now) 101)
-;; (get-all-events)
-;; (get-atom-list-count event-log)

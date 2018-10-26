@@ -27,3 +27,8 @@
  ::events
  (fn [db]
    (:events db)))
+
+(re-frame/reg-sub
+ ::rooms
+ (fn [db]
+   (:rooms db)))

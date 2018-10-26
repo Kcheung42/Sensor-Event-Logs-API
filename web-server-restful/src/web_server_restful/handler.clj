@@ -60,7 +60,11 @@
 ;; (response @(get-sensor-atom id)) ;; same as above
 
 (defn handle-get-all-rooms []
-  (response (get-all-rooms)))
+  {:status 200
+   :headers {"Content-Type" "application-json"
+             "Access-Control-Allow-Origin" "*"
+             "Access-Control-Allow-Headers" "Content-Type"}
+   :body (get-all-rooms)})
 
 (defn handle-create-room [uuid name]
   (go (>! q-chan (register-room uuid name)))

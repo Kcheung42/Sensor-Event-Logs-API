@@ -1,8 +1,9 @@
 # web-app
 
-A [re-frame](https://github.com/Day8/re-frame) application designed to ... well, that part is up to you.
+This is the Web Application to view the status of the sensors.
 
-## Development Mode
+Upon Initialization, The app-db will be initialized with ajax calls to
+the web-server.
 
 ### Run application:
 

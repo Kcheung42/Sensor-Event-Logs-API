@@ -5,4 +5,5 @@
    :name "Starcity"
    :response ""
    :events {}
-   :sensors []})
+   :sensors []
+   :rooms []})

@@ -4,12 +4,6 @@
    [web-app.subs :as subs]
    ))
 
-;; (defn request-it-button []
-;;   [:div {:class "button-class"
-;; :on-click #(dispatch [:request-it])}
-;;       :on-click #(println "hello World")}
-;; "I wan't it now"])
-
 (defn db-initialized? []
   (let [loading? (re-frame/subscribe [::subs/loading?])]
     [:div
@@ -17,11 +11,18 @@
        "Loading db ... "
        "Loading Success!")]))
 
+(defn room-list []
+  (let [rooms (re-frame/subscribe [::subs/rooms])]
+    [:ul
+     (for [room @rooms]
+       ^{:key (:id room)} [:li "Room: " room])]))
+
+
 (defn sensor-list []
   (let [sensors (re-frame/subscribe [::subs/sensors])]
     [:ul
      (for [sensor @sensors]
-       ^{:key (:id sensor)} [:li "Sensor:" sensor])]))
+       ^{:key (:id sensor)} [:li "Sensor: " sensor])]))
 
 (defn event-log []
   (let [events (re-frame/subscribe [::subs/events])]
@@ -42,8 +43,12 @@
      [db-initialized?]
      [get-response]
      [:span
+      [:hr]
+      [:p "Registered Rooms"]
+      [room-list]
+      [:hr]
+      [:p "Registered Sensors"]
       [sensor-list]
-      [event-log]
-      ]
-     ;; [request-it-button]
-     ]))
+      [:hr]
+      [:p "Event Logs"]
+      [event-log]]]))
