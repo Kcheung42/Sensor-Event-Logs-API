@@ -23,24 +23,9 @@ lein run 8000
 
 ## Introduction
 
-This interview is designed to be completed in-office, and is supposed to be
-challenging. Don't think of this so much as a challenge that can be *completed*
-so much as an an opportunity to showcase a variety of skills and insight into
-good system design.
-
-Your output will be evaluated with the following criteria in mind:
-
-- code is clear and readable
-- interfaces between components are clearly defined
-- concerns are separated whenever possible
-- state is managed soundly
-- appropriate trade-offs are made with respect to time
-- attention to edge cases
-- quality of questions asked during design & development process
-
 ## The Big Picture
 
-Starcity wants to know how our spaces are utilized and provide these same useful
+Company wants to know how our spaces are utilized and provide these same useful
 insights to our members. For example:
 
 - Is the bathroom down the hall occupied?
@@ -66,7 +51,7 @@ specific area or areas as you see fit.
 ## Problem Scope
 
 To limit the scope of this challenge, assume that we're dealing with a specific
-community located at `229 Ellis Street` that has:
+community that has:
 
 - a living room
 - a media room
